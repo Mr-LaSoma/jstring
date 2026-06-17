@@ -5,7 +5,7 @@
 // || Libs ||
 // ==========
 
-#include <cstdlib>
+#include <ctype.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,14 +40,14 @@ typedef struct {
     size_t count;
 } JSTRING_String_View;
 
-// Returns a String view from a given const char*
+// Returns a String view from a given const char*.
 JSTRINGDEF JSTRING_String_View jstring_sv_from_cstr(const char* cstr);
 // Returns a String view from the given parts.
 // NOTE: if the 'count' argument is bigger then the actual string, it will break logic... 
-// use [safe_sv_from_parts] method to avoid this problem 
+// use [safe_sv_from_parts] method to avoid this problem.
 JSTRINGDEF JSTRING_String_View jstring_sv_from_parts(const char* data, size_t count);
 // Returns a String view from the given parts.
-// NOTE: the 'ok' argument defines if the logic is valid or not (see [sv_from_parts] method for specification)
+// NOTE: the 'ok' argument defines if the logic is valid or not (see [sv_from_parts] method for specification).
 JSTRINGDEF JSTRING_String_View jstring_safe_sv_from_parts(const char* data, size_t count, JSTRING_Result* ok);
 // Returns a const char* form a given String view.
 // NOTE: this const char* will always have '\0' character at the end.
@@ -57,30 +57,49 @@ JSTRINGDEF const char* jstring_cstr_from_sv(JSTRING_String_View sv);
 JSTRINGDEF const char* jstring_raw_cstr_from_sv(JSTRING_String_View sv);
 
 
+// ============================
+// || Transformation methods ||
+// ============================
+
+// Returns a String view with all the white spaces on both sides trimmed of.
+JSTRINGDEF JSTRING_String_View jstring_sv_trim(JSTRING_String_View sv);
+// Returns a String view with all the white spaces on the left side trimmed of.
+JSTRINGDEF JSTRING_String_View jstring_sv_trim_left(JSTRING_String_View sv);
+// Returns a String view with all the white spaces on the right side trimmed of.
+JSTRINGDEF JSTRING_String_View jstring_sv_trim_right(JSTRING_String_View sv);
+// Returns a String view with all characters converted to lowercase.
+// NOTE: the 'ok' argument defines if the method was able to create the new String view; 
+JSTRINGDEF JSTRING_String_View jstring_sv_to_lower(JSTRING_String_View sv, JSTRING_Result* ok);
+// Returns a String view with all characters converted to uppercase.
+// NOTE: the 'ok' argument defines if the method was able to create the new String view; 
+JSTRINGDEF JSTRING_String_View jstring_sv_to_upper(JSTRING_String_View sv, JSTRING_Result* ok);
+// Returns a Sub view of a given String view from the index 'beg' (inclusive) to 'end' (exclusive).
+// NOTE: the 'ok' argument defines if the method was able to create a new sub string view.
+JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size_t beg, size_t end, JSTRING_Result* ok);
+
 #ifdef JSTRING_IMPLEMENTATION // TODO: remove 'n' in ifndef
 
-// ==================
-// || Constructors ||
-// ==================
 
-JSTRINGDEF JSTRING_String_View jstring_sv_from_parts(const char *data, size_t count) {
-    JSTRING_String_View sv;
-    sv.data = data;
-    sv.count = count;
-    return sv;
-}
+// ========================
+// || Start Constructors ||
+// ========================
 
 JSTRINGDEF JSTRING_String_View jstring_sv_from_cstr(const char *cstr) {
     return jstring_sv_from_parts(cstr, strlen(cstr)); 
 }
 
-JSTRINGDEF JSTRING_String_View jstring_safe_sv_from_parts(const char* data, size_t count, JSTRING_Result* ok) {
-    JSTRING_String_View sv = jstring_sv_from_parts("", 0);
+JSTRINGDEF JSTRING_String_View jstring_sv_from_parts(const char *data, size_t count) {
+    JSTRING_String_View sv;
+    sv.data = data; 
+    sv.count = count;
+    return sv;
+}
 
+JSTRINGDEF JSTRING_String_View jstring_safe_sv_from_parts(const char* data, size_t count, JSTRING_Result* ok) {
     size_t len = strlen(data);
     if(count > len) {
         *ok = JSTRING_FAILURE;
-        return sv;
+        return jstring_sv_from_parts("", 0);
     }
 
     *ok = JSTRING_SUCCESS;
@@ -104,6 +123,81 @@ JSTRINGDEF const char* jstring_raw_cstr_from_sv(JSTRING_String_View sv) {
     return cstr;
 }
 
+// ======================
+// || End Constructors ||
+// ======================
+
+
+// ==========================
+// || Start Transformation ||
+// ==========================
+
+JSTRINGDEF JSTRING_String_View jstring_sv_trim(JSTRING_String_View sv) {
+    return jstring_sv_trim_right(jstring_sv_trim_left(sv));
+}
+
+JSTRINGDEF JSTRING_String_View jstring_sv_trim_left(JSTRING_String_View sv) {
+    size_t i;
+    for(i = 0; i < sv.count && isspace(sv.data[i]); i++) {}
+    return jstring_sv_from_parts(sv.data + i, sv.count - i);
+}
+
+JSTRINGDEF JSTRING_String_View jstring_sv_trim_right(JSTRING_String_View sv) {
+    size_t i;
+    for(i = 0; i < sv.count && isspace(sv.data[sv.count - 1 - i]); i++) {}
+    return jstring_sv_from_parts(sv.data, sv.count - i);
+}
+
+JSTRINGDEF JSTRING_String_View jstring_sv_to_lower(JSTRING_String_View sv, JSTRING_Result* ok) {
+    char* data = (char*)malloc(sv.count);
+    if(data == JSTRING_NULLPTR) {
+        *ok = JSTRING_FAILURE;
+        return jstring_sv_from_parts("", 0);
+    }
+
+    for(int i = 0; i < sv.count; i++) {
+        data[i] = tolower(sv.data[i]);
+    }
+
+    *ok = JSTRING_SUCCESS;
+    return jstring_sv_from_parts(data, sv.count);
+}
+
+JSTRINGDEF JSTRING_String_View jstring_sv_to_upper(JSTRING_String_View sv, JSTRING_Result* ok) {
+    char* data = (char*)malloc(sv.count);
+    if(data == JSTRING_NULLPTR) {
+        *ok = JSTRING_FAILURE;
+        return jstring_sv_from_parts("", 0);
+    }
+
+    for(int i = 0; i < sv.count; i++) {
+        data[i] = toupper(sv.data[i]);
+    }
+
+    *ok = JSTRING_SUCCESS;
+    return jstring_sv_from_parts(data, sv.count);
+}
+
+JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size_t beg, size_t end, JSTRING_Result* ok) {
+    if((beg < 0 && beg >= sv.count) || (end < 0 && end > sv.count)) {
+        *ok = JSTRING_FAILURE;
+        return jstring_sv_from_parts("", 0);
+    }
+
+    size_t len = end-beg;
+    char* data = (char*)malloc(len);
+    for(int i = 0; i < len; i++) {
+       data[i] = sv.data[beg+i];
+    }
+
+    *ok = JSTRING_SUCCESS;
+    return jstring_sv_from_parts(data, len);
+}
+
+// ==========================
+// || End Transformation ||
+// ==========================
+
 
 #endif // JSTRING_IMPLEMENTATION
 
@@ -118,6 +212,13 @@ JSTRINGDEF const char* jstring_raw_cstr_from_sv(JSTRING_String_View sv) {
     #define safe_sv_from_parts(cstr, count, ok)     jstring_safe_sv_from_parts(cstr, count, ok)
     #define cstr_from_sv(sv)                        jstring_cstr_from_sv(sv)
     #define raw_cstr_from_sv(sv)                    jstring_raw_cstr_from_sv(sv)
+
+    #define sv_trim(sv)                     jstring_sv_trim(sv)
+    #define sv_trim_left(sv)                jstring_sv_trim_left(sv)
+    #define sv_trim_right(sv)               jstring_sv_trim_right(sv)
+    #define sv_to_lower(sv, ok)             jstring_sv_to_lower(sv, ok)
+    #define sv_to_upper(sv, ok)             jstring_sv_to_upper(sv, ok)
+    #define sv_substring(sv, beg, end, ok)  jstring_sv_substring(sv, beg, end, ok)
 
 #endif // JSTRING_UNSTRIP_PREFIX
 
