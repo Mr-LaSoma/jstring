@@ -205,6 +205,8 @@ JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size
 #ifndef JSTRING_UNSTRIP_PREFIX
     
     #define Result          JSTRING_Result    
+    #define SUCCESS         JSTRING_SUCCESS 
+    #define FAILURE         JSTRING_FAILURE
     #define String_View     JSTRING_String_View
     
     #define sv_from_cstr(cstr)                      jstring_sv_from_cstr(cstr)
