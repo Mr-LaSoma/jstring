@@ -202,7 +202,7 @@ JSTRINGDEF JSTRING_String_View jstring_sv_to_upper(JSTRING_String_View sv, JSTRI
 JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size_t beg, size_t end, JSTRING_Result* ok);
 
 
-#ifdef JSTRING_IMPLEMENTATION // TODO: remove 'n' in ifndef
+#ifndef JSTRING_IMPLEMENTATION // TODO: remove 'n' in ifndef
 
 
 // ========================
@@ -223,11 +223,11 @@ JSTRINGDEF JSTRING_String_View jstring_sv_from_parts(const char *data, size_t co
 JSTRINGDEF JSTRING_String_View jstring_safe_sv_from_parts(const char* data, size_t count, JSTRING_Result* ok) {
     size_t len = strlen(data);
     if(count > len) {
-        *ok = JSTRING_FAILURE;
+        if(ok) *ok = JSTRING_FAILURE;
         return jstring_sv_from_parts("", 0);
     }
 
-    *ok = JSTRING_SUCCESS;
+    if(ok) *ok = JSTRING_SUCCESS;
     return jstring_sv_from_parts(data, count);
 }
 
@@ -320,10 +320,10 @@ JSTRINGDEF bool jstring_sv_is_empty(JSTRING_String_View sv) {
 
 JSTRINGDEF char jstring_sv_char_at(JSTRING_String_View sv, size_t index, JSTRING_Result* ok) {
     if(index >= sv.count) {
-        *ok = JSTRING_FAILURE;
+        if(ok) *ok = JSTRING_FAILURE;
         return JSTRING_NULLCHAR;
     }
-    *ok = JSTRING_SUCCESS;
+    if(ok) *ok = JSTRING_SUCCESS;
     return sv.data[index];
 }
 
@@ -484,7 +484,7 @@ JSTRINGDEF JSTRING_String_View jstring_sv_trim_right(JSTRING_String_View sv) {
 JSTRINGDEF JSTRING_String_View jstring_sv_to_lower(JSTRING_String_View sv, JSTRING_Result* ok) {
     char* data = (char*)malloc(sv.count);
     if(data == JSTRING_NULLPTR) {
-        *ok = JSTRING_FAILURE;
+        if(ok) *ok = JSTRING_FAILURE;
         return jstring_sv_from_parts("", 0);
     }
 
@@ -492,14 +492,14 @@ JSTRINGDEF JSTRING_String_View jstring_sv_to_lower(JSTRING_String_View sv, JSTRI
         data[i] = tolower(sv.data[i]);
     }
 
-    *ok = JSTRING_SUCCESS;
+    if(ok) *ok = JSTRING_SUCCESS;
     return jstring_sv_from_parts(data, sv.count);
 }
 
 JSTRINGDEF JSTRING_String_View jstring_sv_to_upper(JSTRING_String_View sv, JSTRING_Result* ok) {
     char* data = (char*)malloc(sv.count);
     if(data == JSTRING_NULLPTR) {
-        *ok = JSTRING_FAILURE;
+        if(ok) *ok = JSTRING_FAILURE;
         return jstring_sv_from_parts("", 0);
     }
 
@@ -507,16 +507,16 @@ JSTRINGDEF JSTRING_String_View jstring_sv_to_upper(JSTRING_String_View sv, JSTRI
         data[i] = toupper(sv.data[i]);
     }
 
-    *ok = JSTRING_SUCCESS;
+    if(ok) *ok = JSTRING_SUCCESS;
     return jstring_sv_from_parts(data, sv.count);
 }
 
 JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size_t beg, size_t end, JSTRING_Result* ok) {
     if(beg > end || end > sv.count) {
-        *ok = JSTRING_FAILURE;
+        if(ok) *ok = JSTRING_FAILURE;
         return jstring_sv_from_parts("", 0);
     }
-    *ok = JSTRING_SUCCESS;
+    if(ok) *ok = JSTRING_SUCCESS;
     return jstring_sv_from_parts(sv.data + beg, end - beg);
 }
 
