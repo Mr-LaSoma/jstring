@@ -202,7 +202,7 @@ JSTRINGDEF JSTRING_String_View jstring_sv_to_upper(JSTRING_String_View sv, JSTRI
 JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size_t beg, size_t end, JSTRING_Result* ok);
 
 
-#ifndef JSTRING_IMPLEMENTATION // TODO: remove 'n' in ifndef
+#ifdef JSTRING_IMPLEMENTATION 
 
 
 // ========================
@@ -260,7 +260,7 @@ JSTRINGDEF const char* jstring_raw_cstr_from_sv(JSTRING_String_View sv) {
 
 JSTRINGDEF int jstring_sv_compare(JSTRING_String_View a, JSTRING_String_View b) {
     size_t minlen = a.count <= b.count ? a.count : b.count;
-    for(int i = 0; i < minlen; i++) {
+    for(size_t i = 0; i < minlen; i++) {
         if(a.data[i] < b.data[i]) { return -1; }
         else if(a.data[i] > b.data[i]) { return 1; }
     }
@@ -271,7 +271,7 @@ JSTRINGDEF int jstring_sv_compare(JSTRING_String_View a, JSTRING_String_View b) 
 
 JSTRINGDEF bool jstring_sv_equals(JSTRING_String_View a, JSTRING_String_View b) {
     if(a.count != b.count) { return false; }
-    for(int i = 0; i < a.count; i++) {
+    for(size_t i = 0; i < a.count; i++) {
         if(a.data[i] != b.data[i]) { return false; }
     }
     return true;
@@ -279,7 +279,7 @@ JSTRINGDEF bool jstring_sv_equals(JSTRING_String_View a, JSTRING_String_View b) 
 
 JSTRINGDEF int jstring_sv_compare_ignore_case(JSTRING_String_View a, JSTRING_String_View b) {
     size_t minlen = a.count <= b.count ? a.count : b.count;
-    for(int i = 0; i < minlen; i++) {
+    for(size_t i = 0; i < minlen; i++) {
         char ac = tolower(a.data[i]);
         char bc = tolower(b.data[i]);
 
@@ -293,7 +293,7 @@ JSTRINGDEF int jstring_sv_compare_ignore_case(JSTRING_String_View a, JSTRING_Str
 
 JSTRINGDEF bool jstring_sv_equals_ignore_case(JSTRING_String_View a, JSTRING_String_View b) {
     if(a.count != b.count) { return false; }
-    for(int i = 0; i < a.count; i++) {
+    for(size_t i = 0; i < a.count; i++) {
         if(tolower(a.data[i]) != tolower(b.data[i])) { return false; }
     }
     return true;
@@ -331,8 +331,8 @@ JSTRINGDEF bool jstring_sv_contains(JSTRING_String_View sv, JSTRING_String_View 
     if(str.count == 0) { return true; }
     if(str.count > sv.count) { return false; }
     
-    for(int i = 0; i <= sv.count - str.count; i++) {
-        int j = 0;
+    for(size_t i = 0; i <= sv.count - str.count; i++) {
+        size_t j = 0;
         while(j < str.count && sv.data[i+j] == str.data[j]) {
             j++;
         }
@@ -346,7 +346,7 @@ JSTRINGDEF bool jstring_sv_starts_with(JSTRING_String_View sv, JSTRING_String_Vi
     if(prefix.count == 0) { return true; }
     if(prefix.count > sv.count) { return false; }
     
-    for(int i = 0; i < prefix.count; i++) {
+    for(size_t i = 0; i < prefix.count; i++) {
         if(sv.data[i] != prefix.data[i]) { return false; }
     }
     return true;
@@ -356,8 +356,8 @@ JSTRINGDEF bool jstring_sv_ends_with(JSTRING_String_View sv, JSTRING_String_View
     if(suffix.count == 0) { return true; }
     if(suffix.count > sv.count) { return false; }
     
-    int offset = sv.count - suffix.count;
-    for(int i = 0; i < suffix.count; i++) {
+    size_t offset = sv.count - suffix.count;
+    for(size_t i = 0; i < suffix.count; i++) {
         if(sv.data[offset+i] != suffix.data[i]) { return false; }
     }
     return true;
@@ -395,8 +395,8 @@ JSTRINGDEF bool jstring_sv_contains_ignore_case(JSTRING_String_View sv, JSTRING_
     if(str.count == 0) { return true; }
     if(str.count > sv.count) { return false; }
     
-    for(int i = 0; i <= sv.count - str.count; i++) {
-        int j = 0;
+    for(size_t i = 0; i <= sv.count - str.count; i++) {
+        size_t j = 0;
         while(j < str.count && tolower(sv.data[i+j]) == tolower(str.data[j])) {
             j++;
         }
@@ -410,7 +410,7 @@ JSTRINGDEF bool jstring_sv_starts_with_ignore_case(JSTRING_String_View sv, JSTRI
     if(prefix.count == 0) { return true; }
     if(prefix.count > sv.count) { return false; }
     
-    for(int i = 0; i < prefix.count; i++) {
+    for(size_t i = 0; i < prefix.count; i++) {
         if(tolower(sv.data[i]) != tolower(prefix.data[i])) { return false; }
     }
     return true;
@@ -420,8 +420,8 @@ JSTRINGDEF bool jstring_sv_ends_with_ignore_case(JSTRING_String_View sv, JSTRING
     if(suffix.count == 0) { return true; }
     if(suffix.count > sv.count) { return false; }
     
-    int offset = sv.count - suffix.count;
-    for(int i = 0; i < suffix.count; i++) {
+    size_t offset = sv.count - suffix.count;
+    for(size_t i = 0; i < suffix.count; i++) {
         if(tolower(sv.data[offset+i]) != tolower(suffix.data[i])) { return false; }
     }
     return true;
@@ -488,7 +488,7 @@ JSTRINGDEF JSTRING_String_View jstring_sv_to_lower(JSTRING_String_View sv, JSTRI
         return jstring_sv_from_parts("", 0);
     }
 
-    for(int i = 0; i < sv.count; i++) {
+    for(size_t i = 0; i < sv.count; i++) {
         data[i] = tolower(sv.data[i]);
     }
 
@@ -503,7 +503,7 @@ JSTRINGDEF JSTRING_String_View jstring_sv_to_upper(JSTRING_String_View sv, JSTRI
         return jstring_sv_from_parts("", 0);
     }
 
-    for(int i = 0; i < sv.count; i++) {
+    for(size_t i = 0; i < sv.count; i++) {
         data[i] = toupper(sv.data[i]);
     }
 
