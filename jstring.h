@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 // ===============
 // || Constants ||
@@ -57,6 +58,32 @@ JSTRINGDEF const char* jstring_cstr_from_sv(JSTRING_String_View sv);
 JSTRINGDEF const char* jstring_raw_cstr_from_sv(JSTRING_String_View sv);
 
 
+// ========================
+// || Comparison methods ||
+// ========================
+
+// Returns an int reppresenting the lexicall order.
+// Int:
+// - -1 if 'a' is lexically lesser then 'b',
+// - 1 if 'a' is lexically greater then 'b' and
+// - 0 if 'a' is equal to 'b'
+// NOTE: this method is case sensitive
+JSTRINGDEF int jstring_sv_compare(JSTRING_String_View a, JSTRING_String_View b);
+// Returns if 'a' have the same exactly characters of 'b'.
+// NOTE: this method is case sensitive
+JSTRINGDEF bool jstring_sv_equals(JSTRING_String_View a, JSTRING_String_View b);
+// Returns an int reppresenting the lexicall order.
+// Int:
+// - -1 if 'a' is lexically lesser then 'b',
+// - 1 if 'a' is lexically greater then 'b' and
+// - 0 if 'a' is equal to 'b'
+// NOTE: this method is NOT case sensitive
+JSTRINGDEF int jstring_sv_compare_ignore_case(JSTRING_String_View a, JSTRING_String_View b);
+// Returns if 'a' have the same exactly characters of 'b'.
+// NOTE: this method is NOT case sensitive
+JSTRINGDEF bool jstring_sv_equals_ignore_case(JSTRING_String_View a, JSTRING_String_View b);
+
+
 // ============================
 // || Transformation methods ||
 // ============================
@@ -76,6 +103,7 @@ JSTRINGDEF JSTRING_String_View jstring_sv_to_upper(JSTRING_String_View sv, JSTRI
 // Returns a Sub view of a given String view from the index 'beg' (inclusive) to 'end' (exclusive).
 // NOTE: the 'ok' argument defines if the method was able to create a new sub string view.
 JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size_t beg, size_t end, JSTRING_Result* ok);
+
 
 #ifdef JSTRING_IMPLEMENTATION // TODO: remove 'n' in ifndef
 
@@ -125,6 +153,57 @@ JSTRINGDEF const char* jstring_raw_cstr_from_sv(JSTRING_String_View sv) {
 
 // ======================
 // || End Constructors ||
+// ======================
+
+
+// ======================
+// || Start Comparison ||
+// ======================
+
+
+JSTRINGDEF int jstring_sv_compare(JSTRING_String_View a, JSTRING_String_View b) {
+    size_t minlen = a.count <= b.count ? a.count : b.count;
+    for(int i = 0; i < minlen; i++) {
+        if(a.data[i] < b.data[i]) { return -1; }
+        else if(a.data[i] > b.data[i]) { return 1; }
+    }
+    if(a.count < b.count) { return -1; }
+    if(a.count > b.count) { return 1;}
+    return 0;
+}
+
+JSTRINGDEF bool jstring_sv_equals(JSTRING_String_View a, JSTRING_String_View b) {
+    if(a.count != b.count) { return false; }
+    for(int i = 0; i < a.count; i++) {
+        if(a.data[i] != b.data[i]) { return false; }
+    }
+    return true;
+}
+
+JSTRINGDEF int jstring_sv_compare_ignore_case(JSTRING_String_View a, JSTRING_String_View b) {
+    size_t minlen = a.count <= b.count ? a.count : b.count;
+    for(int i = 0; i < minlen; i++) {
+        char ac = tolower(a.data[i]);
+        char bc = tolower(b.data[i]);
+
+        if(ac < bc) { return -1; }
+        else if(ac > bc) { return 1; }
+    }
+    if(a.count < b.count) { return -1; }
+    if(a.count > b.count) { return 1;}
+    return 0;
+}
+
+JSTRINGDEF bool jstring_sv_equals_ignore_case(JSTRING_String_View a, JSTRING_String_View b) {
+    if(a.count != b.count) { return false; }
+    for(int i = 0; i < a.count; i++) {
+        if(tolower(a.data[i]) != tolower(b.data[i])) { return false; }
+    }
+    return true;
+}
+
+// ======================
+// || End Comparison ||
 // ======================
 
 
@@ -214,6 +293,11 @@ JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size
     #define safe_sv_from_parts(cstr, count, ok)     jstring_safe_sv_from_parts(cstr, count, ok)
     #define cstr_from_sv(sv)                        jstring_cstr_from_sv(sv)
     #define raw_cstr_from_sv(sv)                    jstring_raw_cstr_from_sv(sv)
+    
+    #define sv_compare(a, b)                jstring_sv_compare(a, b)
+    #define sv_equals(a, b)                 jstring_sv_equals(a, b)
+    #define sv_compare_ignore_case(a, b)    jstring_sv_compare_ignore_case(a, b)
+    #define sv_equals_ignore_case(a, b)     jstring_sv_equals_ignore_case(a, b)
 
     #define sv_trim(sv)                     jstring_sv_trim(sv)
     #define sv_trim_left(sv)                jstring_sv_trim_left(sv)
