@@ -20,7 +20,7 @@
 #endif // JSTRINGDEF
 
 #define JSTRING_NULLPTR NULL
-#define JSTRING_NULLCHAR (char)0
+#define JSTRING_NULLCHAR '\0'
 
 // ===========
 // || Enums ||
@@ -41,20 +41,27 @@ typedef struct {
     size_t count;
 } JSTRING_String_View;
 
-// Returns a String view from a given const char*.
+// Returns a String_View from a null-terminated string.
+// Example: jstring_sv_from_cstr("hello") → { data: "hello", count: 5 }
 JSTRINGDEF JSTRING_String_View jstring_sv_from_cstr(const char* cstr);
-// Returns a String view from the given parts.
-// NOTE: if the 'count' argument is bigger then the actual string, it will break logic... 
-// use [safe_sv_from_parts] method to avoid this problem.
+
+// Returns a String_View from a pointer and a length.
+// NOTE: if 'count' is greater than the actual length of 'data', behavior is undefined.
+// Use [jstring_safe_sv_from_parts] if 'count' cannot be guaranteed.
 JSTRINGDEF JSTRING_String_View jstring_sv_from_parts(const char* data, size_t count);
-// Returns a String view from the given parts.
-// NOTE: the 'ok' argument defines if the logic is valid or not (see [sv_from_parts] method for specification).
+
+// Returns a String_View from a pointer and a length, with bounds validation.
+// Sets 'ok' to JSTRING_FAILURE if 'count' exceeds the actual length of 'data'.
+// On failure, returns an empty String_View.
 JSTRINGDEF JSTRING_String_View jstring_safe_sv_from_parts(const char* data, size_t count, JSTRING_Result* ok);
-// Returns a const char* form a given String view.
-// NOTE: this const char* will always have '\0' character at the end.
+
+// Returns a null-terminated const char* from a String_View.
+// The returned string is heap-allocated and must be freed by the caller.
 JSTRINGDEF const char* jstring_cstr_from_sv(JSTRING_String_View sv);
-// Returns a const char* from a given String view.
-// NOTE: this const char* WON'T always have '\0' character at the end. 
+
+// Returns a heap-allocated const char* from a String_View, WITHOUT a null terminator.
+// The returned pointer must be freed by the caller.
+// Use [jstring_cstr_from_sv] if you need a null-terminated string.
 JSTRINGDEF const char* jstring_raw_cstr_from_sv(JSTRING_String_View sv);
 
 
@@ -62,25 +69,28 @@ JSTRINGDEF const char* jstring_raw_cstr_from_sv(JSTRING_String_View sv);
 // || Comparison methods ||
 // ========================
 
-// Returns an int reppresenting the lexicall order.
-// Int:
-// - -1 if 'a' is lexically lesser then 'b',
-// - 1 if 'a' is lexically greater then 'b' and
-// - 0 if 'a' is equal to 'b'
-// NOTE: this method is case sensitive
+// Compares two String_Views lexicographically (case sensitive).
+// Returns:
+//   -1 if 'a' comes before 'b'
+//    0 if 'a' and 'b' are equal
+//    1 if 'a' comes after 'b'
+// Example: compare("apple", "banana") → -1
 JSTRINGDEF int jstring_sv_compare(JSTRING_String_View a, JSTRING_String_View b);
-// Returns if 'a' have the same exactly characters of 'b'.
-// NOTE: this method is case sensitive
+
+// Returns true if 'a' and 'b' contain exactly the same characters (case sensitive).
+// Example: equals("Hello", "hello") → false
 JSTRINGDEF bool jstring_sv_equals(JSTRING_String_View a, JSTRING_String_View b);
-// Returns an int reppresenting the lexicall order.
-// Int:
-// - -1 if 'a' is lexically lesser then 'b',
-// - 1 if 'a' is lexically greater then 'b' and
-// - 0 if 'a' is equal to 'b'
-// NOTE: this method is NOT case sensitive
+
+// Compares two String_Views lexicographically (case insensitive).
+// Returns:
+//   -1 if 'a' comes before 'b'
+//    0 if 'a' and 'b' are equal
+//    1 if 'a' comes after 'b'
+// Example: compare_ignore_case("Apple", "apple") → 0
 JSTRINGDEF int jstring_sv_compare_ignore_case(JSTRING_String_View a, JSTRING_String_View b);
-// Returns if 'a' have the same exactly characters of 'b'.
-// NOTE: this method is NOT case sensitive
+
+// Returns true if 'a' and 'b' contain the same characters, ignoring case.
+// Example: equals_ignore_case("Hello", "hello") → true
 JSTRINGDEF bool jstring_sv_equals_ignore_case(JSTRING_String_View a, JSTRING_String_View b);
 
 
@@ -88,72 +98,107 @@ JSTRINGDEF bool jstring_sv_equals_ignore_case(JSTRING_String_View a, JSTRING_Str
 // || Query methods ||
 // ===================
 
-// Returns the 'count' value of the String view (made just for readability).
+// Returns the number of characters in the String_View.
+// Equivalent to accessing sv.count directly — provided for readability.
 JSTRINGDEF size_t jstring_sv_length(JSTRING_String_View sv);
-// Returns if the String view is empty.
-// NOTE: the spaces are ignored and the method is case sensitive.
-JSTRINGDEF bool   jstring_sv_is_empty(JSTRING_String_View sv);
-// Returns the character at a certain position in the String view.
-// NOTE: 'ok' argument defines if the index is valid and the method is case sensitive.
-JSTRINGDEF char   jstring_sv_char_at(JSTRING_String_View sv, size_t index, JSTRING_Result* ok);
-// Returns whether a String view contains a certain String view.
-// NOTE: the method is case sensitive.
-JSTRINGDEF bool   jstring_sv_contains(JSTRING_String_View sv, JSTRING_String_View str);
-// Returns whether a String view starts with a certain prefix.
-// NOTE: spaces are NOT ignored and the method is case sensitive.
-JSTRINGDEF bool   jstring_sv_starts_with(JSTRING_String_View sv, JSTRING_String_View prefix);
-// Returns whether a String view ends with a certain prefix.
-// NOTE: spaces are NOT ignored and the method is case sensitive.
-JSTRINGDEF bool   jstring_sv_ends_with(JSTRING_String_View sv, JSTRING_String_View suffix);
-// Returns the start index of a string found into a certain String view.
-// Int: 
-// - -1 means the string is not found
-// NOTE: the method is case sensitive.
-JSTRINGDEF int    jstring_sv_index_of(JSTRING_String_View sv, JSTRING_String_View str);
-// Returns the end index of a string found into a certain String view.
-// Int: 
-// - -1 means the string is not found
-// NOTE: the method is case sensitive.
-JSTRINGDEF int    jstring_sv_last_index_of(JSTRING_String_View sv, JSTRING_String_View str);
-// Returns whether a String view contains a certain String view.
-// NOTE: the method is NOT case sensitive.
-JSTRINGDEF bool   jstring_sv_contains_ignore_case(JSTRING_String_View sv, JSTRING_String_View str);
-// Returns whether a String view starts with a certain prefix.
-// NOTE: spaces are NOT ignored and the method is NOT case sensitive.
-JSTRINGDEF bool   jstring_sv_starts_with_ignore_case(JSTRING_String_View sv, JSTRING_String_View prefix);
-// Returns whether a String view ends with a certain prefix.
-// NOTE: spaces are NOT ignored and the method is NOT case sensitive.
-JSTRINGDEF bool   jstring_sv_ends_with_ignore_case(JSTRING_String_View sv, JSTRING_String_View suffix);
-// Returns the start index of a string found into a certain String view.
-// Int: 
-// - -1 means the string is not found
-// NOTE: the method is NOT case sensitive.
-JSTRINGDEF int    jstring_sv_index_of_ignore_case(JSTRING_String_View sv, JSTRING_String_View str);
-// Returns the end index of a string found into a certain String view.
-// Int: 
-// - -1 means the string is not found
-// NOTE: the method is NOT case sensitive.
-JSTRINGDEF int    jstring_sv_last_index_of_ignore_case(JSTRING_String_View sv, JSTRING_String_View str);
+
+// Returns true if the String_View has no characters (count == 0).
+// NOTE: does ignore spaces — " " is considered empty.
+JSTRINGDEF bool jstring_sv_is_empty(JSTRING_String_View sv);
+
+// Returns the character at position 'index' (case sensitive).
+// Sets 'ok' to JSTRING_FAILURE if 'index' is out of bounds, and returns '\0'.
+// Example: char_at("hello", 1, &ok) → 'e'
+JSTRINGDEF char jstring_sv_char_at(JSTRING_String_View sv, size_t index, JSTRING_Result* ok);
+
+// Returns true if 'sv' contains 'str' as a substring (case sensitive).
+// Returns true if 'str' is empty. 
+// Example: contains("hello world", "world") → true
+JSTRINGDEF bool jstring_sv_contains(JSTRING_String_View sv, JSTRING_String_View str);
+
+// Returns true if 'sv' begins with 'prefix' (case sensitive).
+// Returns true if 'prefix' is empty. 
+// Example: starts_with("hello", "hel") → true
+JSTRINGDEF bool jstring_sv_starts_with(JSTRING_String_View sv, JSTRING_String_View prefix);
+
+// Returns true if 'sv' ends with 'suffix' (case sensitive).
+// Returns true if 'suffix' is empty.
+// Example: ends_with("hello", "llo") → true
+JSTRINGDEF bool jstring_sv_ends_with(JSTRING_String_View sv, JSTRING_String_View suffix);
+
+// Returns the index of the first occurrence of 'str' inside 'sv' (case sensitive).
+// Returns -1 if 'str' is not found.
+// Example: index_of("hello world", "world") → 6
+JSTRINGDEF int jstring_sv_index_of(JSTRING_String_View sv, JSTRING_String_View str);
+
+// Returns the index of the last occurrence of 'str' inside 'sv' (case sensitive).
+// Returns -1 if 'str' is not found.
+// Example: last_index_of("hello hello", "hello") → 6
+JSTRINGDEF int jstring_sv_last_index_of(JSTRING_String_View sv, JSTRING_String_View str);
+
+// Returns true if 'sv' contains 'str' as a substring (case insensitive).
+// Returns true if 'str' is empty (mirrors Java behavior).
+// Example: contains_ignore_case("Hello World", "world") → true
+JSTRINGDEF bool jstring_sv_contains_ignore_case(JSTRING_String_View sv, JSTRING_String_View str);
+
+// Returns true if 'sv' begins with 'prefix' (case insensitive).
+// Returns true if 'prefix' is empty.
+// Example: starts_with_ignore_case("Hello", "hel") → true
+JSTRINGDEF bool jstring_sv_starts_with_ignore_case(JSTRING_String_View sv, JSTRING_String_View prefix);
+
+// Returns true if 'sv' ends with 'suffix' (case insensitive).
+// Returns true if 'suffix' is empty.
+// Example: ends_with_ignore_case("Hello", "LLO") → true
+JSTRINGDEF bool jstring_sv_ends_with_ignore_case(JSTRING_String_View sv, JSTRING_String_View suffix);
+
+// Returns the index of the first occurrence of 'str' inside 'sv' (case insensitive).
+// Returns -1 if 'str' is not found.
+// Example: index_of_ignore_case("Hello World", "WORLD") → 6
+JSTRINGDEF int jstring_sv_index_of_ignore_case(JSTRING_String_View sv, JSTRING_String_View str);
+
+// Returns the index of the last occurrence of 'str' inside 'sv' (case insensitive).
+// Returns -1 if 'str' is not found.
+// Example: last_index_of_ignore_case("Hello Hello", "HELLO") → 6
+JSTRINGDEF int jstring_sv_last_index_of_ignore_case(JSTRING_String_View sv, JSTRING_String_View str);
 
 
 // ============================
 // || Transformation methods ||
 // ============================
 
-// Returns a String view with all the white spaces on both sides trimmed of.
+// Returns a String_View with leading and trailing whitespace removed.
+// Uses isspace() — removes spaces, tabs, \n, \r, \f, \v.
+// Does not allocate — returns a view into the original data.
+// Example: trim("  hello  ") → "hello"
 JSTRINGDEF JSTRING_String_View jstring_sv_trim(JSTRING_String_View sv);
-// Returns a String view with all the white spaces on the left side trimmed of.
+
+// Returns a String_View with leading whitespace (ASCII <= 32) removed.
+// Example: trim_left("  hello  ") → "hello  "
 JSTRINGDEF JSTRING_String_View jstring_sv_trim_left(JSTRING_String_View sv);
-// Returns a String view with all the white spaces on the right side trimmed of.
+
+// Returns a String_View with trailing whitespace (ASCII <= 32) removed.
+// Example: trim_right("  hello  ") → "  hello"
 JSTRINGDEF JSTRING_String_View jstring_sv_trim_right(JSTRING_String_View sv);
-// Returns a String view with all characters converted to lowercase.
-// NOTE: the 'ok' argument defines if the method was able to create the new String view; 
+
+// Returns a new String_View with all characters converted to lowercase.
+// Sets 'ok' to JSTRING_FAILURE if memory allocation fails.
+// NOTE: The returned String_View owns its data — the caller must free() sv.data when done.
+// Example: to_lower("Hello WORLD", &ok) → "hello world"
 JSTRINGDEF JSTRING_String_View jstring_sv_to_lower(JSTRING_String_View sv, JSTRING_Result* ok);
-// Returns a String view with all characters converted to uppercase.
-// NOTE: the 'ok' argument defines if the method was able to create the new String view; 
+
+// Returns a new String_View with all characters converted to uppercase.
+// Sets 'ok' to JSTRING_FAILURE if memory allocation fails.
+// ⚠ The returned String_View owns its data — the caller must free() sv.data when done.
+// Example: to_upper("Hello World", &ok) → "HELLO WORLD"
 JSTRINGDEF JSTRING_String_View jstring_sv_to_upper(JSTRING_String_View sv, JSTRING_Result* ok);
-// Returns a Sub view of a given String view from the index 'beg' (inclusive) to 'end' (exclusive).
-// NOTE: the 'ok' argument defines if the method was able to create a new sub string view.
+
+// Returns a sub-view of 'sv' from index 'beg' (inclusive) to 'end' (exclusive).
+// Does not allocate — returns a view into the original data.
+// Sets 'ok' to JSTRING_FAILURE if:
+//   - 'beg' > 'end'
+//   - 'end' > sv.count
+// On failure, returns an empty String_View.
+// Example: substring("hello", 1, 3, &ok) → "el"
 JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size_t beg, size_t end, JSTRING_Result* ok);
 
 
@@ -467,19 +512,12 @@ JSTRINGDEF JSTRING_String_View jstring_sv_to_upper(JSTRING_String_View sv, JSTRI
 }
 
 JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size_t beg, size_t end, JSTRING_Result* ok) {
-    if((beg < 0 && beg >= sv.count) || (end < 0 && end > sv.count)) {
+    if(beg > end || end > sv.count) {
         *ok = JSTRING_FAILURE;
         return jstring_sv_from_parts("", 0);
     }
-
-    size_t len = end-beg;
-    char* data = (char*)malloc(len);
-    for(int i = 0; i < len; i++) {
-       data[i] = sv.data[beg+i];
-    }
-
     *ok = JSTRING_SUCCESS;
-    return jstring_sv_from_parts(data, len);
+    return jstring_sv_from_parts(sv.data + beg, end - beg);
 }
 
 // ==========================
