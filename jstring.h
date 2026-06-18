@@ -20,7 +20,7 @@
 #endif // JSTRINGDEF
 
 #define JSTRING_NULLPTR NULL
-
+#define JSTRING_NULLCHAR (char)0
 
 // ===========
 // || Enums ||
@@ -82,6 +82,58 @@ JSTRINGDEF int jstring_sv_compare_ignore_case(JSTRING_String_View a, JSTRING_Str
 // Returns if 'a' have the same exactly characters of 'b'.
 // NOTE: this method is NOT case sensitive
 JSTRINGDEF bool jstring_sv_equals_ignore_case(JSTRING_String_View a, JSTRING_String_View b);
+
+
+// ===================
+// || Query methods ||
+// ===================
+
+// Returns the 'count' value of the String view (made just for readability).
+JSTRINGDEF size_t jstring_sv_length(JSTRING_String_View sv);
+// Returns if the String view is empty.
+// NOTE: the spaces are ignored and the method is case sensitive.
+JSTRINGDEF bool   jstring_sv_is_empty(JSTRING_String_View sv);
+// Returns the character at a certain position in the String view.
+// NOTE: 'ok' argument defines if the index is valid and the method is case sensitive.
+JSTRINGDEF char   jstring_sv_char_at(JSTRING_String_View sv, size_t index, JSTRING_Result* ok);
+// Returns whether a String view contains a certain String view.
+// NOTE: the method is case sensitive.
+JSTRINGDEF bool   jstring_sv_contains(JSTRING_String_View sv, JSTRING_String_View str);
+// Returns whether a String view starts with a certain prefix.
+// NOTE: spaces are NOT ignored and the method is case sensitive.
+JSTRINGDEF bool   jstring_sv_starts_with(JSTRING_String_View sv, JSTRING_String_View prefix);
+// Returns whether a String view ends with a certain prefix.
+// NOTE: spaces are NOT ignored and the method is case sensitive.
+JSTRINGDEF bool   jstring_sv_ends_with(JSTRING_String_View sv, JSTRING_String_View suffix);
+// Returns the start index of a string found into a certain String view.
+// Int: 
+// - -1 means the string is not found
+// NOTE: the method is case sensitive.
+JSTRINGDEF int    jstring_sv_index_of(JSTRING_String_View sv, JSTRING_String_View str);
+// Returns the end index of a string found into a certain String view.
+// Int: 
+// - -1 means the string is not found
+// NOTE: the method is case sensitive.
+JSTRINGDEF int    jstring_sv_last_index_of(JSTRING_String_View sv, JSTRING_String_View str);
+// Returns whether a String view contains a certain String view.
+// NOTE: the method is NOT case sensitive.
+JSTRINGDEF bool   jstring_sv_contains_ignore_case(JSTRING_String_View sv, JSTRING_String_View str);
+// Returns whether a String view starts with a certain prefix.
+// NOTE: spaces are NOT ignored and the method is NOT case sensitive.
+JSTRINGDEF bool   jstring_sv_starts_with_ignore_case(JSTRING_String_View sv, JSTRING_String_View prefix);
+// Returns whether a String view ends with a certain prefix.
+// NOTE: spaces are NOT ignored and the method is NOT case sensitive.
+JSTRINGDEF bool   jstring_sv_ends_with_ignore_case(JSTRING_String_View sv, JSTRING_String_View suffix);
+// Returns the start index of a string found into a certain String view.
+// Int: 
+// - -1 means the string is not found
+// NOTE: the method is NOT case sensitive.
+JSTRINGDEF int    jstring_sv_index_of_ignore_case(JSTRING_String_View sv, JSTRING_String_View str);
+// Returns the end index of a string found into a certain String view.
+// Int: 
+// - -1 means the string is not found
+// NOTE: the method is NOT case sensitive.
+JSTRINGDEF int    jstring_sv_last_index_of_ignore_case(JSTRING_String_View sv, JSTRING_String_View str);
 
 
 // ============================
@@ -207,6 +259,163 @@ JSTRINGDEF bool jstring_sv_equals_ignore_case(JSTRING_String_View a, JSTRING_Str
 // ======================
 
 
+// ===================
+// || Start Queries ||
+// ===================
+
+
+JSTRINGDEF size_t jstring_sv_length(JSTRING_String_View sv) {
+    return sv.count;
+}
+
+JSTRINGDEF bool jstring_sv_is_empty(JSTRING_String_View sv) {
+    JSTRING_String_View trimmed = jstring_sv_trim(sv);
+    return trimmed.count == 0;
+}
+
+JSTRINGDEF char jstring_sv_char_at(JSTRING_String_View sv, size_t index, JSTRING_Result* ok) {
+    if(index >= sv.count) {
+        *ok = JSTRING_FAILURE;
+        return JSTRING_NULLCHAR;
+    }
+    *ok = JSTRING_SUCCESS;
+    return sv.data[index];
+}
+
+JSTRINGDEF bool jstring_sv_contains(JSTRING_String_View sv, JSTRING_String_View str) {
+    if(str.count == 0) { return true; }
+    if(str.count > sv.count) { return false; }
+    
+    for(int i = 0; i <= sv.count - str.count; i++) {
+        int j = 0;
+        while(j < str.count && sv.data[i+j] == str.data[j]) {
+            j++;
+        }
+        if(j == str.count) { return true; }
+    }
+
+    return false;
+}
+
+JSTRINGDEF bool jstring_sv_starts_with(JSTRING_String_View sv, JSTRING_String_View prefix) {
+    if(prefix.count == 0) { return true; }
+    if(prefix.count > sv.count) { return false; }
+    
+    for(int i = 0; i < prefix.count; i++) {
+        if(sv.data[i] != prefix.data[i]) { return false; }
+    }
+    return true;
+}
+
+JSTRINGDEF bool jstring_sv_ends_with(JSTRING_String_View sv, JSTRING_String_View suffix) {
+    if(suffix.count == 0) { return true; }
+    if(suffix.count > sv.count) { return false; }
+    
+    int offset = sv.count - suffix.count;
+    for(int i = 0; i < suffix.count; i++) {
+        if(sv.data[offset+i] != suffix.data[i]) { return false; }
+    }
+    return true;
+}
+
+JSTRINGDEF int jstring_sv_index_of(JSTRING_String_View sv, JSTRING_String_View str) {
+    if (str.count == 0) { return 0; }
+    if (str.count > sv.count) { return -1; }
+    for (size_t i = 0; i <= sv.count - str.count; i++) {
+        size_t j = 0;
+        while (j < str.count && sv.data[i + j] == str.data[j]) {
+            j++;
+        }
+        if (j == str.count) { return (int)i; }
+    }
+    return -1;
+}
+
+JSTRINGDEF int jstring_sv_last_index_of(JSTRING_String_View sv, JSTRING_String_View str) {
+    if (str.count == 0) { return (int)sv.count; }
+    if (str.count > sv.count) { return -1; }
+    
+    for (size_t i = sv.count - str.count; ; i--) {
+        size_t j = 0;
+        while (j < str.count && sv.data[i + j] == str.data[j]) {
+            j++;
+        }
+        if (j == str.count) { return (int)i; }
+        if (i == 0) { break; }
+    }
+    return -1;
+}
+
+JSTRINGDEF bool jstring_sv_contains_ignore_case(JSTRING_String_View sv, JSTRING_String_View str) {
+    if(str.count == 0) { return true; }
+    if(str.count > sv.count) { return false; }
+    
+    for(int i = 0; i <= sv.count - str.count; i++) {
+        int j = 0;
+        while(j < str.count && tolower(sv.data[i+j]) == tolower(str.data[j])) {
+            j++;
+        }
+        if(j == str.count) { return true; }
+    }
+
+    return false;
+}
+
+JSTRINGDEF bool jstring_sv_starts_with_ignore_case(JSTRING_String_View sv, JSTRING_String_View prefix) {
+    if(prefix.count == 0) { return true; }
+    if(prefix.count > sv.count) { return false; }
+    
+    for(int i = 0; i < prefix.count; i++) {
+        if(tolower(sv.data[i]) != tolower(prefix.data[i])) { return false; }
+    }
+    return true;
+}
+
+JSTRINGDEF bool jstring_sv_ends_with_ignore_case(JSTRING_String_View sv, JSTRING_String_View suffix) {
+    if(suffix.count == 0) { return true; }
+    if(suffix.count > sv.count) { return false; }
+    
+    int offset = sv.count - suffix.count;
+    for(int i = 0; i < suffix.count; i++) {
+        if(tolower(sv.data[offset+i]) != tolower(suffix.data[i])) { return false; }
+    }
+    return true;
+}
+
+JSTRINGDEF int jstring_sv_index_of_ignore_case(JSTRING_String_View sv, JSTRING_String_View str) {
+    if (str.count == 0) { return 0; }
+    if (str.count > sv.count) { return -1; }
+    for (size_t i = 0; i <= sv.count - str.count; i++) {
+        size_t j = 0;
+        while (j < str.count && tolower(sv.data[i + j]) == tolower(str.data[j])) {
+            j++;
+        }
+        if (j == str.count) { return (int)i; }
+    }
+    return -1;
+}
+
+JSTRINGDEF int jstring_sv_last_index_of_ignore_case(JSTRING_String_View sv, JSTRING_String_View str) {
+    if (str.count == 0) { return (int)sv.count; }
+    if (str.count > sv.count) { return -1; }
+    
+    for (size_t i = sv.count - str.count; ; i--) {
+        size_t j = 0;
+        while (j < str.count && tolower(sv.data[i + j]) == tolower(str.data[j])) {
+            j++;
+        }
+        if (j == str.count) { return (int)i; }
+        if (i == 0) { break; }
+    }
+    return -1;
+}
+
+
+// =================
+// || End Queries ||
+// =================
+
+
 // ==========================
 // || Start Transformation ||
 // ==========================
@@ -305,6 +514,21 @@ JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size
     #define sv_to_lower(sv, ok)             jstring_sv_to_lower(sv, ok)
     #define sv_to_upper(sv, ok)             jstring_sv_to_upper(sv, ok)
     #define sv_substring(sv, beg, end, ok)  jstring_sv_substring(sv, beg, end, ok)
+
+
+    #define sv_length(sv)                           jstring_sv_length(sv)
+    #define sv_is_empty(sv)                         jstring_sv_is_empty(sv)
+    #define sv_char_at(sv, index, ok)               jstring_sv_char_at(sv, index, ok)
+    #define sv_contains(sv, str)                    jstring_sv_contains(sv, str)
+    #define sv_starts_with(sv, prefix)              jstring_sv_starts_with(sv, prefix)
+    #define sv_ends_with(sv, suffix)                jstring_sv_ends_with(sv, suffix)
+    #define sv_index_of(sv, str)                    jstring_sv_index_of(sv, str)
+    #define sv_last_index_of(sv, str)               jstring_sv_last_index_of(sv, str)
+    #define sv_contains_ignore_case(sv, str)        jstring_sv_contains_ignore_case(sv, str)
+    #define sv_starts_with_ignore_case(sv, prefix)  jstring_sv_starts_with_ignore_case(sv, prefix)
+    #define sv_ends_with_ignore_case(sv, suffix)    jstring_sv_ends_with_ignore_case(sv, suffix)
+    #define sv_index_of_ignore_case(sv, str)        jstring_sv_index_of_ignore_case(sv, str)
+    #define sv_last_index_of_ignore_case(sv, str)   jstring_sv_last_index_of_ignore_case(sv, str)
 
 #endif // JSTRING_UNSTRIP_PREFIX
 
