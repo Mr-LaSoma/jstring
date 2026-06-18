@@ -1,5 +1,5 @@
-#ifndef JSTRING_H
-#define JSTRING_H
+#ifndef JSTRING_H_
+#define JSTRING_H_
 
 // ==========
 // || Libs ||
@@ -201,6 +201,7 @@ JSTRINGDEF JSTRING_String_View jstring_sv_to_upper(JSTRING_String_View sv, JSTRI
 // Example: substring("hello", 1, 3, &ok) → "el"
 JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size_t beg, size_t end, JSTRING_Result* ok);
 
+#endif // JSTRING_H_
 
 #ifdef JSTRING_IMPLEMENTATION 
 
@@ -527,6 +528,8 @@ JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size
 
 #endif // JSTRING_IMPLEMENTATION
 
+#ifndef JSTRING_UNSTRIP_PREFIX_GUARD_
+#define JSTRING_UNSTRIP_PREFIX_GUARD_
 
 #ifndef JSTRING_UNSTRIP_PREFIX
     
@@ -570,5 +573,4 @@ JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size
 
 #endif // JSTRING_UNSTRIP_PREFIX
 
-
-#endif // JSTRING_H
+#endif // JSTRING_UNSTRIP_PREFIX_GUARD_
