@@ -19,8 +19,8 @@
 #define JSTRINGDEF
 #endif // JSTRINGDEF
 
-#define JSTRING_NULLPTR NULL
-#define JSTRING_NULLCHAR '\0'
+#define JSTRING_NULLPTR_ NULL
+#define JSTRING_NULLCHAR_ '\0'
 
 // ===========
 // || Enums ||
@@ -188,7 +188,7 @@ JSTRINGDEF JSTRING_String_View jstring_sv_to_lower(JSTRING_String_View sv, JSTRI
 
 // Returns a new String_View with all characters converted to uppercase.
 // Sets 'ok' to JSTRING_FAILURE if memory allocation fails.
-// ⚠ The returned String_View owns its data — the caller must free() sv.data when done.
+// NOTE: The returned String_View owns its data — the caller must free() sv.data when done.
 // Example: to_upper("Hello World", &ok) → "HELLO WORLD"
 JSTRINGDEF JSTRING_String_View jstring_sv_to_upper(JSTRING_String_View sv, JSTRING_Result* ok);
 
@@ -200,6 +200,11 @@ JSTRINGDEF JSTRING_String_View jstring_sv_to_upper(JSTRING_String_View sv, JSTRI
 // On failure, returns an empty String_View.
 // Example: substring("hello", 1, 3, &ok) → "el"
 JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size_t beg, size_t end, JSTRING_Result* ok);
+
+// TODO: implementare questi tre metodi (serve solo l'implementation)
+JSTRINGDEF JSTRING_String_View jstring_sv_replace(JSTRING_String_View sv, JSTRING_String_View from, JSTRING_String_View to, size_t count);
+JSTRINGDEF JSTRING_String_View jstring_sv_replace_all(JSTRING_String_View sv, JSTRING_String_View from, JSTRING_String_View to);
+JSTRINGDEF JSTRING_String_View jstring_sv_replace_first(JSTRING_String_View sv, JSTRING_String_View from, JSTRING_String_View to);
 
 #endif // JSTRING_H_
 
@@ -234,16 +239,16 @@ JSTRINGDEF JSTRING_String_View jstring_safe_sv_from_parts(const char* data, size
 
 JSTRINGDEF const char* jstring_cstr_from_sv(JSTRING_String_View sv) {
     char* cstr = (char*)malloc(sv.count + 1);
-    if(cstr == JSTRING_NULLPTR) return JSTRING_NULLPTR;
+    if(cstr == JSTRING_NULLPTR_) return JSTRING_NULLPTR_;
 
     memcpy(cstr, sv.data, sv.count);
-    cstr[sv.count] = '\0';
+    cstr[sv.count] = JSTRING_NULLCHAR_;
     return cstr;
 }
 
 JSTRINGDEF const char* jstring_raw_cstr_from_sv(JSTRING_String_View sv) {
     char* cstr = (char*)malloc(sv.count);
-    if(cstr == JSTRING_NULLPTR) return JSTRING_NULLPTR;
+    if(cstr == JSTRING_NULLPTR_) return JSTRING_NULLPTR_;
 
     memcpy(cstr, sv.data, sv.count);
     return cstr;
@@ -281,8 +286,8 @@ JSTRINGDEF bool jstring_sv_equals(JSTRING_String_View a, JSTRING_String_View b) 
 JSTRINGDEF int jstring_sv_compare_ignore_case(JSTRING_String_View a, JSTRING_String_View b) {
     size_t minlen = a.count <= b.count ? a.count : b.count;
     for(size_t i = 0; i < minlen; i++) {
-        char ac = tolower(a.data[i]);
-        char bc = tolower(b.data[i]);
+        char ac = tolower((unsigned char)a.data[i]);
+        char bc = tolower((unsigned char)b.data[i]);
 
         if(ac < bc) { return -1; }
         else if(ac > bc) { return 1; }
@@ -295,7 +300,7 @@ JSTRINGDEF int jstring_sv_compare_ignore_case(JSTRING_String_View a, JSTRING_Str
 JSTRINGDEF bool jstring_sv_equals_ignore_case(JSTRING_String_View a, JSTRING_String_View b) {
     if(a.count != b.count) { return false; }
     for(size_t i = 0; i < a.count; i++) {
-        if(tolower(a.data[i]) != tolower(b.data[i])) { return false; }
+        if(tolower((unsigned char)a.data[i]) != tolower(b.data[i])) { return false; }
     }
     return true;
 }
@@ -322,7 +327,7 @@ JSTRINGDEF bool jstring_sv_is_empty(JSTRING_String_View sv) {
 JSTRINGDEF char jstring_sv_char_at(JSTRING_String_View sv, size_t index, JSTRING_Result* ok) {
     if(index >= sv.count) {
         if(ok) *ok = JSTRING_FAILURE;
-        return JSTRING_NULLCHAR;
+        return JSTRING_NULLCHAR_;
     }
     if(ok) *ok = JSTRING_SUCCESS;
     return sv.data[index];
@@ -398,7 +403,7 @@ JSTRINGDEF bool jstring_sv_contains_ignore_case(JSTRING_String_View sv, JSTRING_
     
     for(size_t i = 0; i <= sv.count - str.count; i++) {
         size_t j = 0;
-        while(j < str.count && tolower(sv.data[i+j]) == tolower(str.data[j])) {
+        while(j < str.count && tolower((unsigned char)sv.data[i+j]) == tolower(str.data[j])) {
             j++;
         }
         if(j == str.count) { return true; }
@@ -412,7 +417,7 @@ JSTRINGDEF bool jstring_sv_starts_with_ignore_case(JSTRING_String_View sv, JSTRI
     if(prefix.count > sv.count) { return false; }
     
     for(size_t i = 0; i < prefix.count; i++) {
-        if(tolower(sv.data[i]) != tolower(prefix.data[i])) { return false; }
+        if(tolower((unsigned char)sv.data[i]) != tolower(prefix.data[i])) { return false; }
     }
     return true;
 }
@@ -423,7 +428,7 @@ JSTRINGDEF bool jstring_sv_ends_with_ignore_case(JSTRING_String_View sv, JSTRING
     
     size_t offset = sv.count - suffix.count;
     for(size_t i = 0; i < suffix.count; i++) {
-        if(tolower(sv.data[offset+i]) != tolower(suffix.data[i])) { return false; }
+        if(tolower((unsigned char)sv.data[offset+i]) != tolower(suffix.data[i])) { return false; }
     }
     return true;
 }
@@ -433,7 +438,7 @@ JSTRINGDEF int jstring_sv_index_of_ignore_case(JSTRING_String_View sv, JSTRING_S
     if (str.count > sv.count) { return -1; }
     for (size_t i = 0; i <= sv.count - str.count; i++) {
         size_t j = 0;
-        while (j < str.count && tolower(sv.data[i + j]) == tolower(str.data[j])) {
+        while (j < str.count && tolower((unsigned char)sv.data[i + j]) == tolower(str.data[j])) {
             j++;
         }
         if (j == str.count) { return (int)i; }
@@ -447,7 +452,7 @@ JSTRINGDEF int jstring_sv_last_index_of_ignore_case(JSTRING_String_View sv, JSTR
     
     for (size_t i = sv.count - str.count; ; i--) {
         size_t j = 0;
-        while (j < str.count && tolower(sv.data[i + j]) == tolower(str.data[j])) {
+        while (j < str.count && tolower((unsigned char)sv.data[i + j]) == tolower(str.data[j])) {
             j++;
         }
         if (j == str.count) { return (int)i; }
@@ -484,13 +489,13 @@ JSTRINGDEF JSTRING_String_View jstring_sv_trim_right(JSTRING_String_View sv) {
 
 JSTRINGDEF JSTRING_String_View jstring_sv_to_lower(JSTRING_String_View sv, JSTRING_Result* ok) {
     char* data = (char*)malloc(sv.count);
-    if(data == JSTRING_NULLPTR) {
+    if(data == JSTRING_NULLPTR_) {
         if(ok) *ok = JSTRING_FAILURE;
         return jstring_sv_from_parts("", 0);
     }
 
     for(size_t i = 0; i < sv.count; i++) {
-        data[i] = tolower(sv.data[i]);
+        data[i] = tolower((unsigned char)sv.data[i]);
     }
 
     if(ok) *ok = JSTRING_SUCCESS;
@@ -499,13 +504,13 @@ JSTRINGDEF JSTRING_String_View jstring_sv_to_lower(JSTRING_String_View sv, JSTRI
 
 JSTRINGDEF JSTRING_String_View jstring_sv_to_upper(JSTRING_String_View sv, JSTRING_Result* ok) {
     char* data = (char*)malloc(sv.count);
-    if(data == JSTRING_NULLPTR) {
+    if(data == JSTRING_NULLPTR_) {
         if(ok) *ok = JSTRING_FAILURE;
         return jstring_sv_from_parts("", 0);
     }
 
     for(size_t i = 0; i < sv.count; i++) {
-        data[i] = toupper(sv.data[i]);
+        data[i] = toupper((unsigned char)sv.data[i]);
     }
 
     if(ok) *ok = JSTRING_SUCCESS;
@@ -570,6 +575,10 @@ JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size
     #define sv_ends_with_ignore_case(sv, suffix)    jstring_sv_ends_with_ignore_case(sv, suffix)
     #define sv_index_of_ignore_case(sv, str)        jstring_sv_index_of_ignore_case(sv, str)
     #define sv_last_index_of_ignore_case(sv, str)   jstring_sv_last_index_of_ignore_case(sv, str)
+
+    #define sv_replace(sv, from, to, count)     jstring_sv_replace(sv, from, to, count)
+    #define sv_replace_all(sv, from, to)        jstring_sv_replace_all(sv, from, to)
+    #define sv_replace_first(sv, from, to)      jstring_sv_replace_first(sv, from, to)
 
 #endif // JSTRING_UNSTRIP_PREFIX
 
