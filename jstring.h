@@ -103,8 +103,12 @@ JSTRINGDEF bool jstring_sv_equals_ignore_case(JSTRING_String_View a, JSTRING_Str
 JSTRINGDEF size_t jstring_sv_length(JSTRING_String_View sv);
 
 // Returns true if the String_View has no characters (count == 0).
-// NOTE: does ignore spaces — " " is considered empty.
+// NOTE: doesn't ignore spaces — " " is NOT considered empty.
 JSTRINGDEF bool jstring_sv_is_empty(JSTRING_String_View sv);
+
+// Returns true if the String_View has no characters (count == 0).
+// NOTE: does ignore spaces — " " is considered empty.
+JSTRINGDEF bool jstring_sv_is_blank(JSTRING_String_View sv);
 
 // Returns the character at position 'index' (case sensitive).
 // Sets 'ok' to JSTRING_FAILURE if 'index' is out of bounds, and returns '\0'.
@@ -320,6 +324,10 @@ JSTRINGDEF size_t jstring_sv_length(JSTRING_String_View sv) {
 }
 
 JSTRINGDEF bool jstring_sv_is_empty(JSTRING_String_View sv) {
+    return sv.count == 0;
+}
+
+JSTRINGDEF bool jstring_sv_is_blank(JSTRING_String_View sv) {
     JSTRING_String_View trimmed = jstring_sv_trim(sv);
     return trimmed.count == 0;
 }
@@ -564,6 +572,7 @@ JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size
 
     #define sv_length(sv)                           jstring_sv_length(sv)
     #define sv_is_empty(sv)                         jstring_sv_is_empty(sv)
+    #define sv_is_blank(sv)                         jstring_sv_is_blank(sv)
     #define sv_char_at(sv, index, ok)               jstring_sv_char_at(sv, index, ok)
     #define sv_contains(sv, str)                    jstring_sv_contains(sv, str)
     #define sv_starts_with(sv, prefix)              jstring_sv_starts_with(sv, prefix)
