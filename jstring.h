@@ -64,6 +64,14 @@ JSTRINGDEF const char* jstring_cstr_from_sv(JSTRING_String_View sv);
 // Use [jstring_cstr_from_sv] if you need a null-terminated string.
 JSTRINGDEF const char* jstring_raw_cstr_from_sv(JSTRING_String_View sv);
 
+// Frees the heap-allocated data owned by a String_View and resets it to empty.
+// NOTE: Only call this on String_Views returned by owning functions
+//   (e.g. to_lower, to_upper, substring, replace, replace_all, replace_first).
+// Calling this on a non-owning String_View (e.g. from trim, sv_from_cstr, sv_from_parts)
+// is undefined behavior.
+// Safe to call multiple times on the same String_View (no double-free).
+// Safe to call with sv == NULL.
+JSTRINGDEF void jstring_sv_free(JSTRING_String_View* sv);
 
 // ========================
 // || Comparison methods ||
@@ -272,6 +280,13 @@ JSTRINGDEF const char* jstring_raw_cstr_from_sv(JSTRING_String_View sv) {
 
     memcpy(cstr, sv.data, sv.count);
     return cstr;
+}
+
+JSTRINGDEF void jstring_sv_free(JSTRING_String_View* sv) {
+    (if sv == JSTRING_NULLPTR_ || sv->data == JSTRING_NULLPTR_) return null;
+    free((void*)sv->data);
+    sv->data = JSTRING_NULLPTR_;
+    sv->count = 0;
 }
 
 // ======================
@@ -620,7 +635,8 @@ JSTRINGDEF JSTRING_String_View jstring_sv_replace_first(JSTRING_String_View sv, 
     #define safe_sv_from_parts(cstr, count, ok)     jstring_safe_sv_from_parts(cstr, count, ok)
     #define cstr_from_sv(sv)                        jstring_cstr_from_sv(sv)
     #define raw_cstr_from_sv(sv)                    jstring_raw_cstr_from_sv(sv)
-    
+    #define sv_free(sv)                             jstring_sv_free(sv)    
+
     #define sv_compare(a, b)                jstring_sv_compare(a, b)
     #define sv_equals(a, b)                 jstring_sv_equals(a, b)
     #define sv_compare_ignore_case(a, b)    jstring_sv_compare_ignore_case(a, b)
