@@ -205,9 +205,25 @@ JSTRINGDEF JSTRING_String_View jstring_sv_to_upper(JSTRING_String_View sv, JSTRI
 // Example: substring("hello", 1, 3, &ok) → "el"
 JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size_t beg, size_t end, JSTRING_Result* ok);
 
-// TODO: implementare questi tre metodi (serve solo l'implementation)
+// Returns a new String_View with the first 'count' occurrences of 'from' replaced with 'to'.
+// If 'from' is empty or 'count' is 0, returns an unmodified copy of 'sv'.
+// The returned String_View owns its data — the caller must free() sv.data when done.
+// Returns an empty String_View if memory allocation fails.
+// Example: replace("foo foo foo", "foo", "bar", 2) → "bar bar foo"
 JSTRINGDEF JSTRING_String_View jstring_sv_replace(JSTRING_String_View sv, JSTRING_String_View from, JSTRING_String_View to, size_t count);
+
+// Returns a new String_View with all occurrences of 'from' replaced with 'to'.
+// If 'from' is empty, returns an unmodified copy of 'sv'.
+// The returned String_View owns its data — the caller must free() sv.data when done.
+// Returns an empty String_View if memory allocation fails.
+// Example: replace_all("foo foo foo", "foo", "bar") → "bar bar bar"
 JSTRINGDEF JSTRING_String_View jstring_sv_replace_all(JSTRING_String_View sv, JSTRING_String_View from, JSTRING_String_View to);
+
+// Returns a new String_View with only the first occurrence of 'from' replaced with 'to'.
+// If 'from' is empty, returns an unmodified copy of 'sv'.
+// The returned String_View owns its data — the caller must free() sv.data when done.
+// Returns an empty String_View if memory allocation fails.
+// Example: replace_first("foo foo foo", "foo", "bar") → "bar foo foo"
 JSTRINGDEF JSTRING_String_View jstring_sv_replace_first(JSTRING_String_View sv, JSTRING_String_View from, JSTRING_String_View to);
 
 #endif // JSTRING_H_
@@ -532,6 +548,54 @@ JSTRINGDEF JSTRING_String_View jstring_sv_substring(JSTRING_String_View sv, size
     }
     if(ok) *ok = JSTRING_SUCCESS;
     return jstring_sv_from_parts(sv.data + beg, end - beg);
+}
+
+JSTRINGDEF JSTRING_String_View jstring_sv_replace(JSTRING_String_View sv, JSTRING_String_View from, JSTRING_String_View to, size_t count) {
+    if(from.count == 0 || count == 0) {
+        return jstring_sv_from_parts(sv.data, sv.count);
+    }
+
+    size_t replaced = 0;
+    size_t i = 0;
+    size_t new_len = 0;
+    while (i < sv.count) {
+        if (replaced < count && i + from.count <= sv.count &&
+            memcmp(sv.data + i, from.data, from.count) == 0) {
+            new_len += to.count;
+            i += from.count;
+            replaced++;
+        } else {
+            new_len += 1;
+            i += 1;
+        }
+    }
+
+    char* data = (char*)malloc(new_len > 0 ? new_len : 1);
+    if (data == JSTRING_NULLPTR_) return jstring_sv_from_parts("", 0);
+
+    size_t out = 0;
+    replaced = 0;
+    i = 0;
+    while (i < sv.count) {
+        if (replaced < count && i + from.count <= sv.count &&
+            memcmp(sv.data + i, from.data, from.count) == 0) {
+            memcpy(data + out, to.data, to.count);
+            out += to.count;
+            i += from.count;
+            replaced++;
+        } else {
+            data[out++] = sv.data[i++];
+        }
+    }
+
+    return jstring_sv_from_parts(data, new_len);
+}
+
+JSTRINGDEF JSTRING_String_View jstring_sv_replace_all(JSTRING_String_View sv, JSTRING_String_View from, JSTRING_String_View to) {
+    return jstring_sv_replace(sv, from, to, sv.count);
+}
+JSTRINGDEF JSTRING_String_View jstring_sv_replace_first(JSTRING_String_View sv, JSTRING_String_View from, JSTRING_String_View to) {
+    return jstring_sv_replace(sv, from, to, 1);
 }
 
 // ==========================
